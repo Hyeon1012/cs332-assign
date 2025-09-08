@@ -1,0 +1,9 @@
+﻿*/.settings
+*/lib
+*/project
+*/recitations
+*/submission
+*/target
+*/.classpath
+*/.project
+*/build.sbt
