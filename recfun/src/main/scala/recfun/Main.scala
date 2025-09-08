@@ -37,8 +37,8 @@ object Main {
    */
   def countChange(money: Int, coins: List[Int]): Int = {
     def calculateCount(money: Int, coins: List[Int]): Int = {
-      if(money == 0) 1
-      else if(money < 0 || coins.isEmpty) 0
+      if(money < 0 || coins.isEmpty) 0
+      else if(money == 0) 1
       else calculateCount(money, coins.tail) + calculateCount(money - coins.head, coins)
     }
     calculateCount(money, coins)
