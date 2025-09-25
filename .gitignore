@@ -8,3 +8,4 @@
 */.project
 */build.sbt
 .idea
+*/lib_managed
