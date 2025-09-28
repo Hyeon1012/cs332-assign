@@ -2,6 +2,8 @@ package patmat
 
 import common._
 
+import scala.annotation.tailrec
+
 /**
  * Assignment 4: Huffman coding
  *
@@ -26,9 +28,19 @@ object Huffman {
 
   // Part 1: Basics
 
-  def weight(tree: CodeTree): Int = ??? // tree match ...
+  def weight(tree: CodeTree): Int = {
+    tree match{
+      case Fork(left, right, chars, weight) => weight
+      case Leaf(char, weight) => weight
+    }
+  }
 
-  def chars(tree: CodeTree): List[Char] = ??? // tree match ...
+  def chars(tree: CodeTree): List[Char] = {
+    tree match{
+      case Fork(left, right, chars, weight) => chars
+      case Leaf(char, weight) => List(char)
+    }
+  }
 
   def makeCodeTree(left: CodeTree, right: CodeTree) =
     Fork(left, right, chars(left) ::: chars(right), weight(left) + weight(right))
@@ -71,7 +83,29 @@ object Huffman {
    *       println("integer is  : "+ theInt)
    *   }
    */
-  def times(chars: List[Char]): List[(Char, Int)] = ???
+  def times(chars: List[Char]): List[(Char, Int)] = {
+    def removeChar(chars: List[Char], target: Char): List[Char] = {
+      chars.filter(_ != target)
+    }
+
+    def countChar(chars: List[Char], target: Char): (Char, Int) = {
+      (target, chars.count(_ == target))
+    }
+
+    @tailrec
+    def calculate(chars: List[Char], result: List[(Char, Int)]): List[(Char, Int)] = {
+      chars match{
+        case Nil => result
+        case target :: remaining => {
+          val updatedResult = result ::: List(countChar(chars, target))
+          val updatedChars = removeChar(chars, target)
+          calculate(updatedChars, updatedResult)
+        }
+      }
+    }
+
+    calculate(chars, Nil)
+  }
 
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
@@ -80,12 +114,12 @@ object Huffman {
    * head of the list should have the smallest weight), where the weight
    * of a leaf is the frequency of the character.
    */
-  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = ???
+  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = freqs.map{ case (char, weight) => Leaf(char, weight) }.sortBy(weight)
 
   /**
    * Checks whether the list `trees` contains only one single code tree.
    */
-  def singleton(trees: List[CodeTree]): Boolean = ???
+  def singleton(trees: List[CodeTree]): Boolean = (trees.length == 1)
 
   /**
    * The parameter `trees` of this function is a list of code trees ordered
@@ -99,7 +133,16 @@ object Huffman {
    * If `trees` is a list of less than two elements, that list should be returned
    * unchanged.
    */
-  def combine(trees: List[CodeTree]): List[CodeTree] = ???
+  def combine(trees: List[CodeTree]): List[CodeTree] = {
+    trees match{
+      case Nil => trees
+      case first :: Nil => trees
+      case first :: second :: remaining => {
+        val combinedSubTree = makeCodeTree(first, second)
+        (combinedSubTree :: remaining).sortBy(weight)
+      }
+    }
+  }
 
   /**
    * This function will be called in the following way:
@@ -118,7 +161,10 @@ object Huffman {
    *    the example invocation. Also define the return type of the `until` function.
    *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
    */
-  def until(xxx: ???, yyy: ???)(zzz: ???): ??? = ???
+  def until(condition: List[CodeTree] => Boolean, function: List[CodeTree] => List[CodeTree])(treeList: List[CodeTree]): CodeTree = {
+    if(condition(treeList)) treeList.head
+    else until(condition, combine)(function(treeList))
+  }
 
   /**
    * This function creates a code tree which is optimal to encode the text `chars`.
@@ -126,7 +172,7 @@ object Huffman {
    * The parameter `chars` is an arbitrary text. This function extracts the character
    * frequencies from that text and creates a code tree based on them.
    */
-  def createCodeTree(chars: List[Char]): CodeTree = ???
+  def createCodeTree(chars: List[Char]): CodeTree = until(singleton, combine)(makeOrderedLeafList(times(chars)))
 
 
 
