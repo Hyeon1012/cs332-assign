@@ -184,7 +184,19 @@ object Huffman {
    * This function decodes the bit sequence `bits` using the code tree `tree` and returns
    * the resulting list of characters.
    */
-  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = ???
+  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+    val root = tree
+    def recursiveTraversal(subTree: CodeTree, bits: List[Bit]): List[Char] = {
+      (subTree, bits) match{
+        case (Leaf(char, weight), remainingBits) => char :: recursiveTraversal(root, remainingBits)
+        case (Fork(left, right, chars, weight), 0 :: remainingBits) => recursiveTraversal(left, remainingBits)
+        case (Fork(left, right, chars, weight), 1 :: remainingBits) => recursiveTraversal(right, remainingBits)
+        case (_, Nil) => Nil
+      }
+    }
+
+    recursiveTraversal(root, bits)
+  }
 
   /**
    * A Huffman coding tree for the French language.
@@ -202,7 +214,7 @@ object Huffman {
   /**
    * Write a function that returns the decoded secret
    */
-  def decodedSecret: List[Char] = ???
+  def decodedSecret: List[Char] = decode(frenchCode, secret)
 
 
 
@@ -240,7 +252,7 @@ object Huffman {
    * use it in the `convert` method above, this merge method might also do some transformations
    * on the two parameter code tables.
    */
-  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = ???
+  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = a ::: b
 
   /**
    * This function encodes `text` according to the code tree `tree`.
