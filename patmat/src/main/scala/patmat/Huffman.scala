@@ -188,9 +188,9 @@ object Huffman {
     val root = tree
     def recursiveTraversal(subTree: CodeTree, bits: List[Bit]): List[Char] = {
       (subTree, bits) match{
-        case (Leaf(char, weight), remainingBits) => char :: recursiveTraversal(root, remainingBits)
-        case (Fork(left, right, chars, weight), 0 :: remainingBits) => recursiveTraversal(left, remainingBits)
-        case (Fork(left, right, chars, weight), 1 :: remainingBits) => recursiveTraversal(right, remainingBits)
+        case (Leaf(char, _), remainingBits) => char :: recursiveTraversal(root, remainingBits)
+        case (Fork(left, _, _, _), 0 :: remainingBits) => recursiveTraversal(left, remainingBits)
+        case (Fork(_, right, _, _), 1 :: remainingBits) => recursiveTraversal(right, remainingBits)
         case (_, Nil) => Nil
       }
     }
@@ -224,7 +224,19 @@ object Huffman {
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+    def recursiveTraversal(subTree: CodeTree, target: Char): List[Bit] = {
+      subTree match{
+        case Leaf(char, _) if (char == target) => Nil
+        case Fork(left, right, _, _) =>
+          if(chars(left).contains(target)) 0 :: recursiveTraversal(left, target)
+          else if(chars(right).contains(target)) 1 :: recursiveTraversal(right, target)
+          else Nil
+      }
+    }
+
+    text.flatMap(char => recursiveTraversal(tree, char))
+  }
 
 
   // Part 4b: Encoding using code table
@@ -235,7 +247,7 @@ object Huffman {
    * This function returns the bit sequence that represents the character `char` in
    * the code table `table`.
    */
-  def codeBits(table: CodeTable)(char: Char): List[Bit] = ???
+  def codeBits(table: CodeTable)(char: Char): List[Bit] = table.find(_._1 == char).getOrElse((char, Nil))._2
 
   /**
    * Given a code tree, create a code table which contains, for every character in the
@@ -245,7 +257,15 @@ object Huffman {
    * a valid code tree that can be represented as a code table. Using the code tables of the
    * sub-trees, think of how to build the code table for the entire tree.
    */
-  def convert(tree: CodeTree): CodeTable = ???
+  def convert(tree: CodeTree): CodeTable = {
+    def recursiveTraversal(subTree: CodeTree, bits: List[Bit]): CodeTable = {
+      subTree match{
+        case Leaf(char, _) => List((char, bits))
+        case Fork(left, right, char, _) => mergeCodeTables(recursiveTraversal(left, bits :+ 0), recursiveTraversal(right, bits :+ 1))
+      }
+    }
+    recursiveTraversal(tree, Nil)
+  }
 
   /**
    * This function takes two code tables and merges them into one. Depending on how you
@@ -260,5 +280,14 @@ object Huffman {
    * To speed up the encoding process, it first converts the code tree to a code table
    * and then uses it to perform the actual encoding.
    */
-  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+    val table = convert(tree)
+    def recursiveEncodeUsingCodeTable(text: List[Char]): List[Bit] = {
+      text match{
+        case Nil => Nil
+        case target :: remaining => codeBits(table)(target) ::: recursiveEncodeUsingCodeTable(remaining)
+      }
+    }
+    recursiveEncodeUsingCodeTable(text)
+  }
 }
